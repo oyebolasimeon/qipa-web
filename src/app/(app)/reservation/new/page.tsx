@@ -3,10 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { GuestPicker } from "@/components/guest-picker";
 import { PropertyPicker } from "@/components/property-picker";
 import { RangePicker, addDays, todayIso } from "@/components/range-picker";
 import { SkeletonForm } from "@/components/skeleton";
-import { Button, ErrorBanner, FormDropdown, PageHeader } from "@/components/ui";
+import { Button, ErrorBanner, PageHeader } from "@/components/ui";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { guestsQuery, propertiesQuery } from "@/lib/queries";
@@ -26,6 +27,7 @@ function NewReservationInner() {
   const [checkOut, setCheckOut] = useState(params.get("checkOut")?.slice(0, 10) ?? addDays(seededIn, 2));
   const [error, setError] = useState("");
   const homes = properties.data?.data ?? [];
+  const people = guests.data?.data ?? [];
 
   const save = useMutation({
     mutationFn: () =>
@@ -64,14 +66,14 @@ function NewReservationInner() {
           loading={properties.isPending}
           placeholder="Choose a property"
         />
-        <FormDropdown
+        <GuestPicker
           label="Guest"
           value={guestId}
           onChange={setGuestId}
-          options={(guests.data?.data ?? []).map((item) => ({
-            value: item.id,
-            label: item.fullName,
-          }))}
+          guests={people}
+          variant="list"
+          loading={guests.isPending}
+          placeholder="Choose a guest"
         />
         <div className="field-label">Stay dates</div>
         <RangePicker

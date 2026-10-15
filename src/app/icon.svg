@@ -1,15 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Simplified roof + walls + core -->
-  <line x1="32.0" y1="7.8" x2="8.9" y2="27.7" stroke="#4F7CFF" stroke-width="1.1" opacity="0.5" stroke-linecap="round"/>
-  <line x1="32.0" y1="7.8" x2="55.1" y2="27.7" stroke="#4F7CFF" stroke-width="1.1" opacity="0.5" stroke-linecap="round"/>
-  <line x1="8.9" y1="27.7" x2="8.9" y2="55.1" stroke="#4F7CFF" stroke-width="1.1" opacity="0.35" stroke-linecap="round"/>
-  <line x1="55.1" y1="27.7" x2="55.1" y2="55.1" stroke="#4F7CFF" stroke-width="1.1" opacity="0.35" stroke-linecap="round"/>
-  <line x1="8.9" y1="55.1" x2="55.1" y2="55.1" stroke="#4F7CFF" stroke-width="1.1" opacity="0.35" stroke-linecap="round"/>
-  <!-- Neural cross -->
-  <line x1="32.0" y1="7.8" x2="32.0" y2="42.7" stroke="#4F7CFF" stroke-width="0.5" opacity="0.1"/>
-  <line x1="8.9" y1="27.7" x2="55.1" y2="27.7" stroke="#4F7CFF" stroke-width="0.5" opacity="0.1"/>
-  <!-- Peak node -->
-  <circle cx="32.0" cy="7.8" r="2.1" fill="#4F7CFF"/>
-  <!-- Core -->
-  <circle cx="32.0" cy="42.7" r="2.8" fill="#9B2848"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" ry="96" fill="#050911"/>
+  <line x1="256.0" y1="62.6" x2="204.8" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.07"/>
+  <line x1="256.0" y1="62.6" x2="307.2" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.07"/>
+  <line x1="256.0" y1="62.6" x2="85.3" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.09"/>
+  <line x1="256.0" y1="62.6" x2="426.7" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.09"/>
+  <line x1="85.3" y1="204.8" x2="307.2" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.06"/>
+  <line x1="426.7" y1="204.8" x2="204.8" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.06"/>
+  <line x1="85.3" y1="204.8" x2="426.7" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.05"/>
+  <line x1="426.7" y1="204.8" x2="85.3" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.05"/>
+  <line x1="85.3" y1="318.6" x2="204.8" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.08"/>
+  <line x1="426.7" y1="318.6" x2="307.2" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.08"/>
+  <line x1="85.3" y1="432.4" x2="307.2" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.04"/>
+  <line x1="426.7" y1="432.4" x2="204.8" y2="318.6" stroke="#4F7CFF" stroke-width="3.4" opacity="0.04"/>
+  <line x1="256.0" y1="62.6" x2="85.3" y2="204.8" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="256.0" y1="62.6" x2="426.7" y2="204.8" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="85.3" y1="204.8" x2="426.7" y2="204.8" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="85.3" y1="204.8" x2="85.3" y2="318.6" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="85.3" y1="318.6" x2="85.3" y2="432.4" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="426.7" y1="204.8" x2="426.7" y2="318.6" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="426.7" y1="318.6" x2="426.7" y2="432.4" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="85.3" y1="432.4" x2="204.8" y2="432.4" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="307.2" y1="432.4" x2="426.7" y2="432.4" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="204.8" y1="432.4" x2="204.8" y2="318.6" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="204.8" y1="318.6" x2="307.2" y2="318.6" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <line x1="307.2" y1="318.6" x2="307.2" y2="432.4" stroke="#4F7CFF" stroke-width="5.7" opacity="0.35"/>
+  <circle cx="256.0" cy="375.5" r="39.8" fill="#9B2848" opacity="0.15"/>
+  <circle cx="256.0" cy="375.5" r="19.9" fill="#9B2848"/>
+  <circle cx="256.0" cy="62.6" r="19.9" fill="#4F7CFF" opacity="1.0"/>
+  <circle cx="85.3" cy="204.8" r="15.6" fill="#4F7CFF" opacity="0.7"/>
+  <circle cx="426.7" cy="204.8" r="15.6" fill="#4F7CFF" opacity="0.7"/>
+  <circle cx="85.3" cy="432.4" r="12.8" fill="#4F7CFF" opacity="0.5"/>
+  <circle cx="426.7" cy="432.4" r="12.8" fill="#4F7CFF" opacity="0.5"/>
+  <circle cx="204.8" cy="318.6" r="11.4" fill="#4F7CFF" opacity="0.55"/>
+  <circle cx="307.2" cy="318.6" r="11.4" fill="#4F7CFF" opacity="0.55"/>
+  <circle cx="204.8" cy="432.4" r="10.0" fill="#4F7CFF" opacity="0.4"/>
+  <circle cx="307.2" cy="432.4" r="10.0" fill="#4F7CFF" opacity="0.4"/>
+  <circle cx="85.3" cy="318.6" r="11.4" fill="#4F7CFF" opacity="0.45"/>
+  <circle cx="426.7" cy="318.6" r="11.4" fill="#4F7CFF" opacity="0.45"/>
 </svg>

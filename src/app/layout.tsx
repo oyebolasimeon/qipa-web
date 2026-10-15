@@ -16,6 +16,15 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Ocupai",
   description: "The AI operating system for modern property.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16" },
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/ocupai-logo.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
