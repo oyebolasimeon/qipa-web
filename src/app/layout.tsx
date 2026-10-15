@@ -27,10 +27,13 @@ export const metadata: Metadata = {
   },
 };
 
+const themeBoot = `(function(){try{var k='qipa_theme';var m=localStorage.getItem(k)||'dark';var r=m;if(m==='system'){r=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}if(r!=='light'&&r!=='dark')r='dark';document.documentElement.dataset.theme=r;document.documentElement.style.colorScheme=r}catch(e){document.documentElement.dataset.theme='dark'}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body className={`${inter.className} ${inter.variable} ${outfit.variable} antialiased`}>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
         <Providers>{children}</Providers>
       </body>
     </html>

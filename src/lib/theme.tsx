@@ -20,6 +20,11 @@ function resolveMode(mode: ThemeMode) {
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
+function applyResolved(next: "light" | "dark") {
+  document.documentElement.dataset.theme = next;
+  document.documentElement.style.colorScheme = next;
+}
+
 interface ThemeContextValue {
   mode: ThemeMode;
   resolved: "light" | "dark";
@@ -36,16 +41,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
     if (stored === "light" || stored === "dark" || stored === "system") {
       setModeState(stored);
-      setResolved(resolveMode(stored));
+      const next = resolveMode(stored);
+      setResolved(next);
+      applyResolved(next);
     }
   }, []);
 
   useEffect(() => {
     const next = resolveMode(mode);
     setResolved(next);
-    document.documentElement.dataset.theme = next;
-    if (mode !== "system") localStorage.setItem(STORAGE_KEY, mode);
-    else localStorage.setItem(STORAGE_KEY, mode);
+    applyResolved(next);
+    localStorage.setItem(STORAGE_KEY, mode);
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const onChange = () => {
+      const next = resolveMode("system");
+      setResolved(next);
+      applyResolved(next);
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
   }, [mode]);
 
   const setMode = useCallback((next: ThemeMode) => {
