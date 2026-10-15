@@ -17,9 +17,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { OcupaiMark, Wordmark } from "@/components/brand";
+import { SkeletonShell } from "@/components/skeleton";
 import { SpaceBackdrop } from "@/components/space-backdrop";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
+import { isOperationalStaff } from "@/lib/roles";
 import {
   isFlatsharesWorkspace,
   isMaintenanceWorkspace,
@@ -68,17 +70,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const items = tabItems(session?.organization.kind);
+  const staffRole = isOperationalStaff(session?.membership.role);
+  const items = staffRole
+    ? [
+        { href: "/staff", labelKey: "tabs.home" as const, icon: Sparkles },
+        { href: "/staff/tasks", labelKey: "more.items.tasks" as const, icon: Hammer },
+        { href: "/staff/notifications", labelKey: "more.items.alertsUpdates" as const, icon: Bell },
+        { href: "/staff/profile", labelKey: "tabs.more" as const, icon: LayoutGrid },
+      ]
+    : tabItems(session?.organization.kind);
 
   useEffect(() => {
     if (!isLoading && !session) router.replace("/login");
   }, [isLoading, session, router]);
 
+  useEffect(() => {
+    if (!session || isLoading) return;
+    if (!isOperationalStaff(session.membership.role)) return;
+    const allowed =
+      pathname.startsWith("/staff") || pathname.startsWith("/task") || pathname.startsWith("/profile");
+    if (!allowed) router.replace("/staff");
+  }, [isLoading, pathname, router, session]);
+
   if (isLoading || !session) {
     return (
-      <div className="space-root flex items-center justify-center text-[var(--text-secondary)]">
+      <div className="space-root">
         <SpaceBackdrop />
-        <span className="relative z-10">{t("common.loading")}</span>
+        <SkeletonShell />
       </div>
     );
   }
@@ -135,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Bell size={18} />
           </Link>
         </header>
-        <main className="mx-auto max-w-5xl px-4 pb-28 pt-3 lg:px-8 lg:pb-12 lg:pt-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-3 lg:px-8 lg:pb-12 lg:pt-8">{children}</main>
       </div>
 
       <nav className="tabbar fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 px-1 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 lg:hidden">

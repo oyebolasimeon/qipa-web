@@ -70,6 +70,12 @@ export default function LoginPage() {
           Create one
         </Link>
       </p>
+      <p className="mt-3 text-center text-sm text-[var(--text-muted)]">
+        Invited to a team?{" "}
+        <Link href="/accept-invite" className="font-semibold text-[var(--mist)]">
+          Join here
+        </Link>
+      </p>
     </AuthShell>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import { SkeletonList } from "@/components/skeleton";
+import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
@@ -22,21 +23,26 @@ export default function MaintenanceWorkOrdersPage() {
   return (
     <div>
       <PageHeader title={t("maintenance.workOrders")} />
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? <EmptyState title={t("maintenance.emptyWorkOrders")} /> : null}
-      <div className="space-y-3">
-        {rows.map((row) => (
-          <Card key={row.id}>
-            <div className="flex justify-between gap-3">
-              <div className="font-semibold">{row.title ?? t("maintenance.workOrders")}</div>
-              <StatusPill>{row.status}</StatusPill>
+      {rows.length ? (
+        <div className="list-stack">
+          {rows.map((row) => (
+            <div key={row.id} className="list-row">
+              <div className="list-row-body">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="list-row-title">{row.title ?? t("maintenance.workOrders")}</div>
+                  <StatusPill>{row.status.replace(/_/g, " ")}</StatusPill>
+                </div>
+                <div className="list-row-meta">
+                  {row.priority.replace(/_/g, " ")}
+                  {row.estimatedCost ? ` · ${formatCurrency(row.estimatedCost)}` : ""}
+                </div>
+              </div>
             </div>
-            <div className="mt-1 text-sm text-[var(--text-secondary)]">
-              {row.priority}
-              {row.estimatedCost ? ` · ${formatCurrency(row.estimatedCost)}` : ""}
-            </div>
-          </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PropertyPicker } from "@/components/property-picker";
 import { Button, ErrorBanner, Field, PageHeader } from "@/components/ui";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -70,17 +71,13 @@ export default function NewMaintenanceIssuePage() {
           <Field label="Postcode" value={postcode} onChange={setPostcode} />
         </>
       ) : (
-        <label className="mb-3 block text-sm">
-          Property
-          <select className="field mt-1" value={propertyId} onChange={(event) => setPropertyId(event.target.value)}>
-            <option value="">Select</option>
-            {homes.map((home) => (
-              <option key={home.id} value={home.id}>
-                {home.publicName || home.internalName}
-              </option>
-            ))}
-          </select>
-        </label>
+        <PropertyPicker
+          label="Property"
+          value={propertyId}
+          onChange={setPropertyId}
+          properties={homes}
+          placeholder="Choose a property"
+        />
       )}
       <Field label={t("maintenance.title")} value={title} onChange={setTitle} />
       <Field label={t("maintenance.description")} value={description} onChange={setDescription} />

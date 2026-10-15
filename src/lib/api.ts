@@ -62,6 +62,21 @@ export async function apiRequest<T>(
   return body as T;
 }
 
+export async function uploadForm<T>(path: string, form: FormData, token?: string): Promise<T> {
+  const authToken = token ?? getActiveToken();
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    body: form,
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = body as ApiError;
+    throw new ApiRequestError(err.error ?? "Upload failed", response.status, err.code);
+  }
+  return body as T;
+}
+
 export function mediaUrl(url: string) {
   if (!url) return url;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;

@@ -64,7 +64,7 @@ export default function RegisterPage() {
         organizationKind: organizationKind ?? "HOSPITALITY",
         operatorType: organizationKind === "MAINTENANCE" ? operatorType : undefined,
       });
-      router.replace("/home");
+      router.replace("/onboarding");
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : t("auth.registrationFailed"));
     } finally {

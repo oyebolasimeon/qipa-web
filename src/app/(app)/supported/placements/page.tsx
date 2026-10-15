@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { SkeletonList } from "@/components/skeleton";
 import { Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -30,6 +31,7 @@ export default function SupportedPlacementsPage() {
   return (
     <div>
       <PageHeader title={t("supported.placements")} subtitle={t("supported.placementsSubtitle")} />
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? <EmptyState title={t("supported.emptyPlacements")} /> : null}
       <div className="space-y-3">
         {rows.map((row) => (

@@ -174,7 +174,7 @@ export interface CalendarView {
     city?: string;
     basePrice: number;
     currency: string;
-    days: Array<{ date: string; status: string; nightlyRate: number }>;
+    days: Array<{ date: string; status: string; nightlyRate: number; stopSell?: boolean; minimumStay?: number }>;
     reservations: Array<{
       id: string;
       guestName: string;

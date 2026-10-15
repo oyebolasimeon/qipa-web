@@ -29,3 +29,9 @@ export function formatWhen(dateStr: string) {
 export function occupancyPct(value: number) {
   return `${Math.round((Number.isFinite(value) ? value : 0) * 100)}%`;
 }
+
+export function docId(item?: { id?: string; _id?: string } | string | null) {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  return item.id ?? item._id ?? "";
+}

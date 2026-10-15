@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { Button, Card, PageHeader } from "@/components/ui";
+import { useEffect, useRef, useState } from "react";
+import { SkeletonChat } from "@/components/skeleton";
+import { Button, PageHeader } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatWhen } from "@/lib/format";
+import { ocupaiPropertyName } from "@/lib/property-name";
 import type { Conversation } from "@/lib/types";
 
 export default function ConversationPage() {
@@ -14,10 +16,12 @@ export default function ConversationPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [reply, setReply] = useState("");
-  const { data } = useQuery({
+  const endRef = useRef<HTMLDivElement>(null);
+  const { data, isPending } = useQuery({
     queryKey: ["conversation", id],
     queryFn: () => apiRequest<Conversation>(`/api/conversations/${id}`, { token: session?.token }),
     enabled: !!session?.token && !!id,
+    refetchInterval: 8_000,
   });
 
   const send = useMutation({
@@ -34,22 +38,45 @@ export default function ConversationPage() {
     },
   });
 
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [data?.messages?.length]);
+
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader title={data?.guest?.fullName ?? "Conversation"} subtitle={data?.property?.publicName} />
-      <div className="space-y-3">
-        {(data?.messages ?? []).map((message) => (
-          <Card key={message.id} className={message.direction === "OUTBOUND" ? "ml-8" : "mr-8"}>
-            <div className="text-xs text-[var(--text-muted)]">
-              {message.senderName ?? message.senderType} · {formatWhen(message.sentAt)}
+    <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col">
+      <PageHeader
+        title={data?.guest?.fullName ?? "Conversation"}
+        subtitle={[ocupaiPropertyName(data?.property), data?.channel].filter(Boolean).join(" · ")}
+      />
+      <div className="chat-thread flex-1">
+        {isPending && !data ? <SkeletonChat /> : null}
+        {(data?.messages ?? []).map((message) => {
+          const outbound = message.direction === "OUTBOUND" || message.senderType === "STAFF" || message.senderType === "AI";
+          return (
+            <div key={message.id} className={`bubble ${outbound ? "bubble-out" : "bubble-in"}`}>
+              <div className="bubble-meta">
+                {message.senderName ?? message.senderType} · {formatWhen(message.sentAt)}
+              </div>
+              {message.content}
             </div>
-            <div className="mt-1 whitespace-pre-wrap">{message.content}</div>
-          </Card>
-        ))}
+          );
+        })}
+        <div ref={endRef} />
       </div>
-      <div className="mt-4 flex gap-2">
-        <input className="field" value={reply} onChange={(event) => setReply(event.target.value)} />
-        <Button loading={send.isPending} onClick={() => reply.trim() && send.mutate(reply.trim())}>
+      <div className="composer">
+        <input
+          className="field"
+          value={reply}
+          placeholder="Write a reply…"
+          onChange={(event) => setReply(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && reply.trim()) {
+              event.preventDefault();
+              send.mutate(reply.trim());
+            }
+          }}
+        />
+        <Button size="sm" loading={send.isPending} onClick={() => reply.trim() && send.mutate(reply.trim())}>
           Send
         </Button>
       </div>

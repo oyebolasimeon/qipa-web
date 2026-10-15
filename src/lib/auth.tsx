@@ -136,6 +136,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(next);
   }, []);
 
+  const applySessionProfile = useCallback(
+    (profile: {
+      user: AuthSession["user"];
+      organization: AuthSession["organization"];
+      membership: AuthSession["membership"];
+    }) => {
+      const token = session?.token ?? localStorage.getItem(TOKEN_KEY);
+      if (!token) return;
+      const next: AuthSession = { token, ...profile };
+      persistAuth(next);
+      setSession(next);
+    },
+    [session?.token],
+  );
+
   const signOut = useCallback(() => {
     persistAuth(null);
     setSession(null);
@@ -159,8 +174,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deleteAccount,
       establishSession,
       refreshSession,
+      applySessionProfile,
     }),
-    [session, isLoading, signIn, signUp, signOut, deleteAccount, establishSession, refreshSession],
+    [session, isLoading, signIn, signUp, signOut, deleteAccount, establishSession, refreshSession, applySessionProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

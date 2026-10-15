@@ -1,7 +1,10 @@
 "use client";
 
+import { Check, ChevronDown, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { DateField } from "@/components/range-picker";
 
 export function Field({
   label,
@@ -10,6 +13,7 @@ export function Field({
   type = "text",
   placeholder,
   autoComplete,
+  multiline,
 }: {
   label: string;
   value: string;
@@ -17,19 +21,124 @@ export function Field({
   type?: string;
   placeholder?: string;
   autoComplete?: string;
+  multiline?: boolean;
+}) {
+  if (type === "date") return <DateField label={label} value={value} onChange={onChange} />;
+  return (
+    <label className="field-wrap block">
+      <span className="field-label">{label}</span>
+      {multiline ? (
+        <textarea
+          className="field field-multiline"
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      ) : (
+        <input
+          className="field"
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+    </label>
+  );
+}
+
+export function FormSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
 }) {
   return (
-    <label className="block">
-      <span className="field-label">{label}</span>
-      <input
-        className="field"
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
+    <div className="field-wrap">
+      <div className="field-label">{label}</div>
+      <div className="choice-chips">
+        {options.map((option) => (
+          <button
+            key={option.value || "all"}
+            type="button"
+            className={`choice-chip ${value === option.value ? "on" : ""}`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function FormDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Select",
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <div className="field-wrap">
+      <div className="field-label">{label}</div>
+      <button type="button" className="dropdown" onClick={() => setOpen(true)}>
+        <span className={selected ? "" : "dropdown-placeholder"}>{selected?.label ?? placeholder}</span>
+        <ChevronDown size={18} className="text-[var(--text-muted)]" />
+      </button>
+      {open ? (
+        <div className="sheet-root">
+          <button type="button" className="sheet-backdrop" aria-label="Close" onClick={() => setOpen(false)} />
+          <div className="sheet">
+            <div className="sheet-grabber" />
+            <div className="sheet-title">{label}</div>
+            <div className="max-h-[420px] overflow-y-auto">
+              {options.map((option) => {
+                const active = option.value === value;
+                return (
+                  <button
+                    key={option.value || "all"}
+                    type="button"
+                    className={`sheet-row ${active ? "active" : ""}`}
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
+                  >
+                    <span>{option.label}</span>
+                    {active ? <Check size={18} className="text-[var(--primary)]" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -38,21 +147,41 @@ export function Button({
   onClick,
   type = "button",
   loading,
+  disabled,
   variant = "primary",
+  size = "md",
   className = "",
 }: {
   children: ReactNode;
   onClick?: () => void;
   type?: "button" | "submit";
   loading?: boolean;
-  variant?: "primary" | "ghost" | "danger";
+  disabled?: boolean;
+  variant?: "primary" | "ghost" | "soft" | "danger" | "danger-ghost";
+  size?: "md" | "sm";
   className?: string;
 }) {
-  const cls =
-    variant === "primary" ? "btn btn-primary" : variant === "ghost" ? "btn btn-ghost" : "btn btn-ghost text-[var(--accent)]";
+  const variantClass =
+    variant === "ghost"
+      ? "btn-ghost"
+      : variant === "soft"
+        ? "btn-soft"
+        : variant === "danger"
+          ? "btn-danger"
+          : variant === "danger-ghost"
+            ? "btn-danger-ghost"
+            : "btn-primary";
+  const busy = Boolean(loading);
   return (
-    <button type={type} onClick={onClick} disabled={loading} className={`${cls} ${className}`}>
-      {loading ? "…" : children}
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={busy || disabled}
+      aria-busy={busy || undefined}
+      className={`btn ${variantClass} ${size === "sm" ? "btn-sm" : "btn-md"} ${className}`}
+    >
+      {busy ? <span className="btn-spinner" aria-hidden /> : null}
+      <span>{busy ? "Working…" : children}</span>
     </button>
   );
 }
@@ -124,6 +253,27 @@ export function ErrorBanner({ message }: { message?: string }) {
   );
 }
 
+const ROOT_PATHS = new Set([
+  "/home",
+  "/calendar",
+  "/bookings",
+  "/inbox",
+  "/more",
+  "/staff",
+  "/staff/tasks",
+  "/staff/profile",
+  "/staff/notifications",
+  "/flatshares/rooms",
+  "/flatshares/tenancies",
+  "/flatshares/enquiries",
+  "/maintenance/issues",
+  "/maintenance/work-orders",
+  "/maintenance/contractors",
+  "/supported/rooms",
+  "/supported/placements",
+  "/supported/referrals",
+]);
+
 export function PageHeader({
   title,
   subtitle,
@@ -133,13 +283,29 @@ export function PageHeader({
   subtitle?: string;
   action?: ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const showBack = !ROOT_PATHS.has(pathname);
+
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="page-title">{title}</h1>
-        {subtitle ? <p className="page-sub">{subtitle}</p> : null}
+    <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start gap-2">
+        {showBack ? (
+          <button
+            type="button"
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--primary)]"
+            onClick={() => router.back()}
+            aria-label="Back"
+          >
+            <ChevronLeft size={22} />
+          </button>
+        ) : null}
+        <div className="min-w-0">
+          <h1 className="page-title">{title}</h1>
+          {subtitle ? <p className="page-sub">{subtitle}</p> : null}
+        </div>
       </div>
-      {action}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

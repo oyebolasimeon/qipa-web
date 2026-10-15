@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import { SkeletonList } from "@/components/skeleton";
+import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
@@ -21,19 +22,34 @@ export default function FlatshareEnquiriesPage() {
   return (
     <div>
       <PageHeader title={t("flatshares.enquiries")} />
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? <EmptyState title={t("flatshares.emptyEnquiries")} /> : null}
-      <div className="space-y-3">
-        {rows.map((row) => (
-          <Card key={row.id}>
-            <div className="flex justify-between gap-3">
-              <div className="font-semibold">{row.name}</div>
-              <StatusPill>{row.stage}</StatusPill>
-            </div>
-            <div className="mt-1 text-sm text-[var(--text-secondary)]">{row.email}</div>
-            {row.message ? <p className="mt-2 text-sm">{row.message}</p> : null}
-          </Card>
-        ))}
-      </div>
+      {rows.length ? (
+        <div className="list-stack">
+          {rows.map((row) => {
+            const initials = row.name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part[0])
+              .join("")
+              .toUpperCase();
+            return (
+              <div key={row.id} className="list-row !items-start">
+                <div className="avatar">{initials || "?"}</div>
+                <div className="list-row-body">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="list-row-title">{row.name}</div>
+                    <StatusPill>{row.stage.replace(/_/g, " ")}</StatusPill>
+                  </div>
+                  <div className="list-row-meta">{row.email}</div>
+                  {row.message ? <p className="mt-2 text-sm text-[var(--text-secondary)]">{row.message}</p> : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { SkeletonList } from "@/components/skeleton";
 import { Card, EmptyState, Kpi, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +35,7 @@ export default function SupportedFinancePage() {
         <Kpi label={t("supported.collected")} value={formatCurrency(revenue.data?.collected ?? 0)} />
         <Kpi label={t("supported.outstanding")} value={formatCurrency(revenue.data?.outstanding ?? 0)} />
       </div>
+      {invoices.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !invoices.isPending ? <EmptyState title={t("supported.emptyInvoices")} /> : null}
       <div className="space-y-3">
         {rows.map((row) => (

@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import Link from "next/link";
+import { SkeletonCards } from "@/components/skeleton";
+import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
@@ -30,25 +32,40 @@ export default function SupportedRoomsPage() {
 
   return (
     <div>
-      <PageHeader title={t("supported.rooms")} subtitle={t("supported.roomsSubtitle")} />
-      {rows.length === 0 && !query.isPending ? <EmptyState title={t("supported.emptyRooms")} /> : null}
+      <PageHeader
+        title={t("supported.rooms")}
+        subtitle={t("supported.roomsSubtitle")}
+        action={
+          <Link href="/supported/rooms/new" className="btn btn-primary btn-sm">
+            Add room
+          </Link>
+        }
+      />
+      {query.isPending ? <SkeletonCards count={4} /> : null}
+      {rows.length === 0 && !query.isPending ? (
+        <EmptyState title={t("supported.emptyRooms")} action="Add room" href="/supported/rooms/new" />
+      ) : null}
       <div className="grid gap-3 md:grid-cols-2">
         {rows.map((row) => (
-          <Card key={row.id}>
-            {row.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={mediaUrl(row.photoUrl)} alt="" className="mb-3 h-36 w-full rounded-xl object-cover" />
-            ) : null}
-            <div className="flex justify-between gap-3">
-              <div className="font-semibold">
-                {row.propertyName} · {row.roomNumber}
+          <Link key={row.id} href={`/supported/rooms/${row.id}`} className="property-card block">
+            <div className="property-cover">
+              {row.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={mediaUrl(row.photoUrl)} alt="" />
+              ) : null}
+            </div>
+            <div className="property-body">
+              <div className="flex items-start justify-between gap-3">
+                <div className="list-row-title">
+                  {row.propertyName} · {row.roomNumber}
+                </div>
+                <StatusPill>{row.status.replace(/_/g, " ")}</StatusPill>
               </div>
-              <StatusPill>{row.status}</StatusPill>
+              <div className="list-row-meta">
+                {row.city} · {formatCurrency(row.weeklyRate, row.currency)} / week
+              </div>
             </div>
-            <div className="mt-1 text-sm text-[var(--text-secondary)]">
-              {row.city} · {formatCurrency(row.weeklyRate, row.currency)} / week
-            </div>
-          </Card>
+          </Link>
         ))}
       </div>
     </div>

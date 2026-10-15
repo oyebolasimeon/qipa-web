@@ -1,9 +1,15 @@
 "use client";
 
+import { CalendarDays, List, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { PageHeader } from "@/components/ui";
-import { bookingSourceColor } from "@/lib/booking-source";
+import { MonthStripCalendar } from "@/components/month-strip";
+import { OccupancyGrid } from "@/components/occupancy-grid";
+import { RangePicker } from "@/components/range-picker";
+import { SkeletonCalendar } from "@/components/skeleton";
+import { Button, Field, PageHeader } from "@/components/ui";
+import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
 import { ocupaiPropertyName } from "@/lib/property-name";
@@ -17,6 +23,10 @@ import FlatshareRoomsPage from "../flatshares/rooms/page";
 import MaintenanceIssuesPage from "../maintenance/issues/page";
 import SupportedRoomsPage from "../supported/rooms/page";
 
+function monthShort(year: number, month: number) {
+  return new Intl.DateTimeFormat("en-GB", { month: "short" }).format(new Date(year, month, 1));
+}
+
 export default function CalendarPage() {
   const { session } = useAuth();
   if (isSupportedWorkspace(session?.organization.kind)) return <SupportedRoomsPage />;
@@ -28,83 +38,188 @@ export default function CalendarPage() {
 function CalendarInner() {
   const { session } = useAuth();
   const { t } = useTranslation();
-  const year = new Date().getFullYear();
-  const { data, isPending } = useQuery(calendarQuery(session?.organization.id, year, session?.token));
-  const days = Array.from({ length: 14 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index);
-    return date.toISOString().slice(0, 10);
-  });
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [chipYear, setChipYear] = useState(now.getFullYear());
+  const [view, setView] = useState<"grid" | "strip">("grid");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [editor, setEditor] = useState<{
+    propertyId: string;
+    propertyName: string;
+    startDate: string;
+    endDate: string;
+    rate: string;
+    minStay: string;
+    stopSell: boolean;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const { data, isPending, refetch } = useQuery(calendarQuery(session?.organization.id, year, session?.token));
+
+  const monthChips = useMemo(() => {
+    const items: Array<{ year: number; month: number; label: string }> = [];
+    for (let offset = -2; offset <= 2; offset += 1) {
+      const date = new Date(chipYear, month + offset, 1);
+      items.push({ year: date.getFullYear(), month: date.getMonth(), label: monthShort(date.getFullYear(), date.getMonth()) });
+    }
+    return items;
+  }, [chipYear, month]);
+
+  const properties = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return (data?.properties ?? []).filter((property) => {
+      if (!needle) return true;
+      return ocupaiPropertyName(property).toLowerCase().includes(needle);
+    });
+  }, [data?.properties, query]);
 
   return (
     <div>
       <PageHeader
         title={t("calendar.title")}
         action={
-          <Link href="/reservation/new" className="btn btn-primary min-h-11 px-4 py-2 text-sm">
-            {t("calendar.newBooking")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="view-switch">
+              <button type="button" className={view === "grid" ? "on" : ""} onClick={() => setView("grid")} aria-label={t("calendar.viewGrid")}>
+                <CalendarDays size={16} />
+              </button>
+              <button type="button" className={view === "strip" ? "on" : ""} onClick={() => setView("strip")} aria-label={t("calendar.viewStrip")}>
+                <List size={16} />
+              </button>
+            </div>
+            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)]" onClick={() => setSearchOpen((value) => !value)}>
+              <Search size={18} />
+            </button>
+            <Link href="/reservation/new" className="btn btn-primary min-h-11 px-4 py-2 text-sm">
+              {t("calendar.newBooking")}
+            </Link>
+          </div>
         }
       />
-      {isPending ? <p className="text-[var(--text-muted)]">{t("common.loading")}</p> : null}
-      <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--glass-inner)]">
-        <div className="sticky left-0 z-10 grid min-w-[900px]" style={{ gridTemplateColumns: "140px repeat(14, minmax(56px, 1fr))" }}>
-          <div className="border-b border-[var(--border)] bg-[var(--surface)] p-3 text-xs text-[var(--text-muted)]">Property</div>
-          {days.map((day) => (
-            <div key={day} className="border-b border-l border-[var(--border)] p-2 text-center text-[11px] text-[var(--text-muted)]">
-              {new Date(`${day}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}
-            </div>
-          ))}
-          {(data?.properties ?? []).map((property) => (
-            <PropertyRow key={property.id} property={property} days={days} />
-          ))}
+      {searchOpen ? (
+        <input
+          className="field mb-4"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t("calendar.searchPlaceholder")}
+        />
+      ) : null}
+      {view === "grid" ? (
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            className="month-chip"
+            onClick={() => {
+              const next = chipYear + 1 > year + 2 ? year - 1 : chipYear + 1;
+              setChipYear(next);
+              setYear(next);
+              setMonth(0);
+            }}
+          >
+            {chipYear} ▾
+          </button>
+          {monthChips.map((chip) => {
+            const selected = chip.year === chipYear && chip.month === month;
+            return (
+              <button
+                key={`${chip.year}-${chip.month}`}
+                type="button"
+                className={`month-chip ${selected ? "on" : ""}`}
+                onClick={() => {
+                  setChipYear(chip.year);
+                  setMonth(chip.month);
+                  if (chip.year !== year) setYear(chip.year);
+                }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
         </div>
-      </div>
-    </div>
-  );
-}
+      ) : null}
+      {isPending ? <SkeletonCalendar /> : null}
+      {view === "strip" ? (
+        <MonthStripCalendar properties={properties} year={chipYear} month={month} onMonthChange={(nextYear, nextMonth) => {
+          setChipYear(nextYear);
+          setMonth(nextMonth);
+          if (nextYear !== year) setYear(nextYear);
+        }} />
+      ) : (
+        <OccupancyGrid
+          properties={properties}
+          onDayPress={(propertyId, date, nightlyRate, stopSell) => {
+            const property = properties.find((item) => item.id === propertyId);
+            const day = property?.days.find((item) => item.date.slice(0, 10) === date);
+            setEditor({
+              propertyId,
+              propertyName: ocupaiPropertyName(property),
+              startDate: date,
+              endDate: date,
+              rate: String(nightlyRate),
+              minStay: String(day?.minimumStay ?? 1),
+              stopSell,
+            });
+          }}
+        />
+      )}
 
-function PropertyRow({
-  property,
-  days,
-}: {
-  property: {
-    id: string;
-    publicName: string;
-    internalName: string;
-    reservations: Array<{ id: string; guestName: string; source: string; checkIn: string; checkOut: string }>;
-  };
-  days: string[];
-}) {
-  return (
-    <>
-      <Link href={`/property/${property.id}`} className="sticky left-0 border-b border-[var(--border)] bg-[var(--surface)] p-3 text-sm font-medium">
-        {ocupaiPropertyName(property)}
-      </Link>
-      <div className="relative col-span-14 border-b border-[var(--border)]" style={{ minHeight: 72 }}>
-        {days.map((day, index) => (
-          <div key={day} className="absolute top-0 h-full border-l border-[var(--border)]/60" style={{ left: `${(index / 14) * 100}%`, width: `${100 / 14}%` }} />
-        ))}
-        {property.reservations.map((stay) => {
-          const start = days.findIndex((day) => day >= stay.checkIn.slice(0, 10));
-          const end = days.findIndex((day) => day >= stay.checkOut.slice(0, 10));
-          if (stay.checkOut.slice(0, 10) <= days[0] || stay.checkIn.slice(0, 10) > days[days.length - 1]) return null;
-          const left = Math.max(0, start === -1 ? 0 : start);
-          const right = end === -1 ? 14 : end;
-          const width = Math.max(1, right - left);
-          const color = bookingSourceColor(stay.source);
-          return (
-            <Link
-              key={stay.id}
-              href={`/reservation/${stay.id}`}
-              className="absolute top-3 flex h-12 items-center overflow-hidden rounded-lg px-2 text-xs font-semibold text-white"
-              style={{ left: `${(left / 14) * 100}%`, width: `${(width / 14) * 100}%`, background: color }}
+      {editor ? (
+        <div className="sheet-root">
+          <button type="button" className="sheet-backdrop" onClick={() => setEditor(null)} />
+          <div className="sheet">
+            <div className="sheet-grabber" />
+            <div className="sheet-title">{editor.propertyName}</div>
+            <RangePicker
+              startDate={editor.startDate}
+              endDate={editor.endDate}
+              onChange={(startDate, endDate) => setEditor({ ...editor, startDate, endDate })}
+            />
+            <Field label={t("calendar.nightlyRate")} value={editor.rate} onChange={(rate) => setEditor({ ...editor, rate })} />
+            <Field label={t("calendar.minimumStay")} value={editor.minStay} onChange={(minStay) => setEditor({ ...editor, minStay })} />
+            <button
+              type="button"
+              className="mb-4 flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
+              onClick={() => setEditor({ ...editor, stopSell: !editor.stopSell })}
             >
-              {stay.guestName}
-            </Link>
-          );
-        })}
-      </div>
-    </>
+              <span className="field-label mb-0">{t("calendar.stopSell")}</span>
+              <span className="font-semibold text-[var(--mist)]">{editor.stopSell ? t("calendar.on") : t("calendar.off")}</span>
+            </button>
+            <Button
+              className="w-full"
+              loading={saving}
+              onClick={() => {
+                if (!session?.token) return;
+                setSaving(true);
+                void apiRequest("/api/calendar/pricing", {
+                  method: "POST",
+                  token: session.token,
+                  body: {
+                    propertyId: editor.propertyId,
+                    changes: [
+                      {
+                        startDate: editor.startDate,
+                        endDate: editor.endDate,
+                        nightlyRate: Number(editor.rate),
+                        minimumStay: Number(editor.minStay),
+                        stopSell: editor.stopSell,
+                      },
+                    ],
+                  },
+                })
+                  .then(() => {
+                    setEditor(null);
+                    void refetch();
+                  })
+                  .finally(() => setSaving(false));
+              }}
+            >
+              {saving ? t("calendar.saving") : t("calendar.saveAndSync")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

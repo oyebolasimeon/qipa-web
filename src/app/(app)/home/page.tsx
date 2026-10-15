@@ -26,6 +26,7 @@ import {
   isMaintenanceWorkspace,
   isSupportedWorkspace,
 } from "@/lib/workspace-mode";
+import { SkeletonHome } from "@/components/skeleton";
 import { Glass, IconTile, PageHeader, ProgressBar } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { bookingSourceColor } from "@/lib/booking-source";
@@ -85,7 +86,7 @@ function HospitalityHome() {
         </div>
       </Link>
 
-      {isPending ? <p className="py-10 text-center text-[var(--text-muted)]">{t("common.loading")}</p> : null}
+      {isPending ? <SkeletonHome /> : null}
       {error && !data ? <p className="text-center text-[var(--accent)]">{error.message}</p> : null}
 
       {data ? (

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" data-theme="dark">
-      <body className={`${inter.variable} ${outfit.variable} antialiased`}>
+      <body className={`${inter.className} ${inter.variable} ${outfit.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

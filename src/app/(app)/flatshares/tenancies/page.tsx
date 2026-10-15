@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import { SkeletonList } from "@/components/skeleton";
+import { Button, EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -30,27 +31,40 @@ export default function FlatshareTenanciesPage() {
   return (
     <div>
       <PageHeader title={t("flatshares.tenancies")} />
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? <EmptyState title={t("flatshares.emptyTenancies")} /> : null}
-      <div className="space-y-3">
-        {rows.map((row) => (
-          <Card key={row.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-semibold">{row.tenantName}</div>
-                <div className="text-sm text-[var(--text-secondary)]">
-                  {formatCurrency(row.rentAmount)} · {formatDate(row.startDate)}
+      {rows.length ? (
+        <div className="list-stack">
+          {rows.map((row) => {
+            const initials = row.tenantName
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part[0])
+              .join("")
+              .toUpperCase();
+            return (
+              <div key={row.id} className="list-row !items-start">
+                <div className="avatar">{initials || "?"}</div>
+                <div className="list-row-body">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="list-row-title">{row.tenantName}</div>
+                    <StatusPill>{row.status.replace(/_/g, " ")}</StatusPill>
+                  </div>
+                  <div className="list-row-meta">
+                    {formatCurrency(row.rentAmount)} · {formatDate(row.startDate)}
+                  </div>
+                  {row.status !== "ACTIVE" ? (
+                    <Button size="sm" className="mt-3" onClick={() => activate.mutate(row.id)}>
+                      {t("flatshares.activate")}
+                    </Button>
+                  ) : null}
                 </div>
               </div>
-              <StatusPill>{row.status}</StatusPill>
-            </div>
-            {row.status !== "ACTIVE" ? (
-              <Button className="mt-3" onClick={() => activate.mutate(row.id)}>
-                {t("flatshares.activate")}
-              </Button>
-            ) : null}
-          </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

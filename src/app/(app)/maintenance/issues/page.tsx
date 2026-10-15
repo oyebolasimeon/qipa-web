@@ -2,7 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Card, EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import { SkeletonList } from "@/components/skeleton";
+import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
@@ -24,30 +25,33 @@ export default function MaintenanceIssuesPage() {
       <PageHeader
         title={t("maintenance.issues")}
         action={
-          <Link href="/maintenance/issues/new" className="btn btn-primary">
+          <Link href="/maintenance/issues/new" className="btn btn-primary btn-sm">
             {t("maintenance.addIssue")}
           </Link>
         }
       />
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? (
         <EmptyState title={t("maintenance.emptyIssues")} action={t("maintenance.addIssue")} href="/maintenance/issues/new" />
       ) : null}
-      <div className="space-y-3">
-        {rows.map((row) => (
-          <Link key={row.id} href={`/maintenance/issues/${row.id}`}>
-            <Card>
-              <div className="flex justify-between gap-3">
-                <div className="font-semibold">{row.title}</div>
-                <StatusPill>{row.status}</StatusPill>
+      {rows.length ? (
+        <div className="list-stack">
+          {rows.map((row) => (
+            <Link key={row.id} href={`/maintenance/issues/${row.id}`} className="list-row">
+              <div className="list-row-body">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="list-row-title">{row.title}</div>
+                  <StatusPill>{row.status.replace(/_/g, " ")}</StatusPill>
+                </div>
+                <div className="list-row-meta">
+                  {row.urgency.replace(/_/g, " ")}
+                  {row.propertyName ? ` · ${row.propertyName}` : ""}
+                </div>
               </div>
-              <div className="mt-1 text-sm text-[var(--text-secondary)]">
-                {row.urgency}
-                {row.propertyName ? ` · ${row.propertyName}` : ""}
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

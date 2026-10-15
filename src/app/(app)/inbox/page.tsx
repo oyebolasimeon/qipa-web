@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { SkeletonList } from "@/components/skeleton";
 import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { formatWhen } from "@/lib/format";
@@ -34,26 +35,43 @@ function InboxInner() {
   return (
     <div>
       <PageHeader title={t("inbox.title")} subtitle={t("inbox.subtitle")} />
-      {isPending ? <p className="text-[var(--text-muted)]">{t("common.loading")}</p> : null}
+      {isPending ? <SkeletonList rows={7} /> : null}
       {rows.length === 0 && !isPending ? <EmptyState title={t("inbox.empty")} /> : null}
-      <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--glass-inner)]">
-        {rows.map((row) => (
-          <Link key={row.id} href={`/conversation/${row.id}`} className="block px-4 py-3.5 hover:bg-white/[0.03]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="font-semibold">{row.guest?.fullName ?? t("common.guest")}</div>
-              <div className="text-xs text-[var(--text-muted)]">{row.lastMessageAt ? formatWhen(row.lastMessageAt) : ""}</div>
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
-              <span className="truncate">
-                {ocupaiPropertyName(row.property)}
-                {row.channel ? ` · ${row.channel}` : ""}
-              </span>
-              {row.status ? <StatusPill>{row.status}</StatusPill> : null}
-            </div>
-            <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">{row.lastMessagePreview}</p>
-          </Link>
-        ))}
-      </div>
+      {rows.length ? (
+        <div className="list-stack">
+          {rows.map((row) => {
+            const name = row.guest?.fullName ?? t("common.guest");
+            const initials = name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part[0])
+              .join("")
+              .toUpperCase();
+            return (
+              <Link key={row.id} href={`/conversation/${row.id}`} className="list-row">
+                <div className="avatar">{initials || "?"}</div>
+                <div className="list-row-body">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="list-row-title">{name}</div>
+                    <div className="shrink-0 text-xs text-[var(--text-muted)]">
+                      {row.lastMessageAt ? formatWhen(row.lastMessageAt) : ""}
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="list-row-meta truncate">
+                      {ocupaiPropertyName(row.property)}
+                      {row.channel ? ` · ${row.channel}` : ""}
+                    </span>
+                    {row.status ? <StatusPill>{row.status}</StatusPill> : null}
+                  </div>
+                  <p className="list-row-sub line-clamp-2">{row.lastMessagePreview}</p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

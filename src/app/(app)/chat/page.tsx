@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-import { Button, Card, PageHeader } from "@/components/ui";
+import { useEffect, useRef, useState } from "react";
+import { Button, PageHeader } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
@@ -16,6 +16,7 @@ interface Message {
 export default function ChatPage() {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const endRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Ask Ocupai about occupancy, arrivals, revenue, or what needs attention." },
@@ -33,6 +34,10 @@ export default function ChatPage() {
     },
   });
 
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
   const send = () => {
     const message = input.trim();
     if (!message) return;
@@ -42,18 +47,25 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader title={t("more.askOcupai")} />
-      <div className="space-y-3">
+    <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col">
+      <PageHeader title={t("more.askOcupai")} subtitle="Your AI operator for this business" />
+      <div className="chat-thread flex-1">
         {messages.map((message, index) => (
-          <Card key={`${message.role}-${index}`} className={message.role === "user" ? "ml-8" : "mr-8"}>
+          <div key={`${message.role}-${index}`} className={`bubble ${message.role === "user" ? "bubble-out" : "bubble-in"}`}>
             {message.content}
-          </Card>
+          </div>
         ))}
+        <div ref={endRef} />
       </div>
-      <div className="mt-4 flex gap-2">
-        <input className="field" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && send()} />
-        <Button loading={chat.isPending} onClick={send}>
+      <div className="composer">
+        <input
+          className="field"
+          value={input}
+          placeholder={t("home.askPlaceholder")}
+          onChange={(event) => setInput(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && send()}
+        />
+        <Button size="sm" loading={chat.isPending} onClick={send}>
           Send
         </Button>
       </div>

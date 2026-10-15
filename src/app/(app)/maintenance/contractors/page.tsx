@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { SkeletonList } from "@/components/skeleton";
 import { Button, Card, EmptyState, Field, PageHeader } from "@/components/ui";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -54,6 +55,7 @@ export default function MaintenanceContractorsPage() {
           </Button>
         </Card>
       ) : null}
+      {query.isPending ? <SkeletonList rows={5} /> : null}
       {rows.length === 0 && !query.isPending ? <EmptyState title={t("maintenance.emptyContractors")} /> : null}
       <div className="space-y-3">
         {rows.map((row) => (

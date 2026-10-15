@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, ErrorBanner, Field, PageHeader } from "@/components/ui";
+import { Button, ErrorBanner, Field, FormDropdown, PageHeader } from "@/components/ui";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n";
@@ -63,17 +63,15 @@ export default function NewFlatshareRoomPage() {
       <PageHeader title={t("flatshares.addRoom")} />
       <ErrorBanner message={error} />
       {homes.length > 0 ? (
-        <label className="mb-3 block text-sm">
-          Home
-          <select className="field mt-1" value={propertyId} onChange={(event) => setPropertyId(event.target.value)}>
-            <option value="__new__">{t("supported.addNewHome")}</option>
-            {homes.map((home) => (
-              <option key={home.id} value={home.id}>
-                {home.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FormDropdown
+          label="Home"
+          value={propertyId}
+          onChange={setPropertyId}
+          options={[
+            { value: "__new__", label: t("supported.addNewHome") },
+            ...homes.map((home) => ({ value: home.id, label: home.name })),
+          ]}
+        />
       ) : null}
       {creatingHome ? (
         <>
