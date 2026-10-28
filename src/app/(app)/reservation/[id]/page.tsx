@@ -1,22 +1,30 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { SkeletonDetail } from "@/components/skeleton";
-import { Button, Glass, PageHeader, StatusPill } from "@/components/ui";
-import { apiRequest } from "@/lib/api";
+import { Button, ErrorBanner, Glass, PageHeader, StatusPill } from "@/components/ui";
+import { apiRequest, ApiRequestError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { bookingSourceColor } from "@/lib/booking-source";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ocupaiPropertyName } from "@/lib/property-name";
 import { canOperate } from "@/lib/roles";
 import type { Reservation } from "@/lib/types";
+import { useState } from "react";
+
+function isPendingRequest(status?: string) {
+  return status === "PENDING" || status === "INQUIRY";
+}
 
 export default function ReservationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { session } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const operate = canOperate(session?.membership.role);
+  const [error, setError] = useState("");
   const { data, isPending } = useQuery({
     queryKey: ["reservation", id],
     queryFn: () => apiRequest<Reservation>(`/api/reservations/${id}`, { token: session?.token }),
@@ -35,6 +43,37 @@ export default function ReservationDetailPage() {
     },
   });
 
+  const updateStatus = useMutation({
+    mutationFn: (status: string) =>
+      apiRequest<Reservation>(`/api/reservations/${id}`, {
+        method: "PATCH",
+        token: session?.token,
+        body: { status },
+      }),
+    onSuccess: async (updated) => {
+      setError("");
+      queryClient.setQueryData(["reservation", id], updated);
+      queryClient.setQueriesData<{ data: Reservation[]; total: number }>(
+        { queryKey: ["reservations"] },
+        (current) => {
+          if (!current?.data?.length) return current;
+          const rows = current.data.filter((row) => row.id !== updated.id);
+          if (rows.length === current.data.length) return current;
+          return { ...current, data: rows, total: Math.max(0, (current.total ?? rows.length) - 1) };
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      await queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      await queryClient.invalidateQueries({ queryKey: ["briefing"] });
+      if (updated.status === "CANCELLED" || updated.status === "NO_SHOW") {
+        router.push("/bookings");
+      }
+    },
+    onError: (err) => {
+      setError(err instanceof ApiRequestError ? err.message : "Could not update booking");
+    },
+  });
+
   if (isPending && !data) {
     return (
       <div className="mx-auto max-w-2xl">
@@ -43,6 +82,8 @@ export default function ReservationDetailPage() {
     );
   }
 
+  const closed = data?.status === "CANCELLED" || data?.status === "CHECKED_OUT" || data?.status === "NO_SHOW";
+
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
@@ -50,6 +91,7 @@ export default function ReservationDetailPage() {
         subtitle={ocupaiPropertyName(data?.property)}
         action={<StatusPill color={color}>{data?.status}</StatusPill>}
       />
+      <ErrorBanner message={error} />
       <Glass accent className="mb-4">
         <div className="font-[family-name:var(--font-outfit)] text-3xl font-bold">
           {formatCurrency(data?.totalAmount ?? 0, data?.currency)}
@@ -87,7 +129,52 @@ export default function ReservationDetailPage() {
             </Link>
           ) : null}
         </div>
-        {operate ? (
+        {operate && !closed ? (
+          <div className="mt-5 flex flex-col gap-2">
+            {isPendingRequest(data?.status) ? (
+              <Button
+                className="w-full"
+                loading={updateStatus.isPending}
+                onClick={() => updateStatus.mutate("CONFIRMED")}
+              >
+                Approve booking
+              </Button>
+            ) : null}
+            {data?.status === "CONFIRMED" ? (
+              <Button
+                className="w-full"
+                loading={updateStatus.isPending}
+                onClick={() => updateStatus.mutate("CHECKED_IN")}
+              >
+                Check in guest
+              </Button>
+            ) : null}
+            {data?.status === "CHECKED_IN" ? (
+              <Button
+                className="w-full"
+                loading={updateStatus.isPending}
+                onClick={() => updateStatus.mutate("CHECKED_OUT")}
+              >
+                Check out guest
+              </Button>
+            ) : null}
+            <Button className="w-full" loading={checkout.isPending} onClick={() => checkout.mutate()}>
+              Guest checkout
+            </Button>
+            <Button
+              className="w-full"
+              variant="danger"
+              loading={updateStatus.isPending}
+              onClick={() => {
+                if (window.confirm("Cancel this reservation on Ocupai and the booking channel?")) {
+                  updateStatus.mutate("CANCELLED");
+                }
+              }}
+            >
+              Cancel reservation
+            </Button>
+          </div>
+        ) : operate ? (
           <Button className="mt-5 w-full" loading={checkout.isPending} onClick={() => checkout.mutate()}>
             Guest checkout
           </Button>
