@@ -23,6 +23,7 @@ export interface Organization {
   timezone: string;
   defaultCurrency: string;
   kind?: OrganizationKind;
+  settings?: Record<string, unknown>;
 }
 
 export interface Membership {
@@ -78,6 +79,9 @@ export interface Property {
   amenities: string[];
   photos: Array<{ url: string; publicId?: string; isCover: boolean }>;
   notes?: string;
+  bookingApprovalMode?: "INHERIT" | "ALWAYS_ON" | "ALWAYS_OFF";
+  sameDayCutoffEnabled?: boolean;
+  sameDayCutoffTime?: string;
 }
 
 export interface ExecutiveBriefing {
@@ -161,6 +165,9 @@ export interface Reservation {
   paymentStatus: string;
   stayStatus?: "upcoming" | "in_house" | "checked_out" | "cancelled";
   notes?: string;
+  requestedAt?: string;
+  approvalDeadlineAt?: string;
+  approvalExpired?: boolean;
 }
 
 export interface CalendarView {

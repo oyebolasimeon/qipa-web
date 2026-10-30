@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SkeletonList } from "@/components/skeleton";
 import { EmptyState, PageHeader, StatusPill } from "@/components/ui";
+import { formatApprovalCountdown } from "@/lib/booking-approval";
 import { bookingSourceColor } from "@/lib/booking-source";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -111,7 +112,16 @@ function BookingsInner() {
                       <div className="text-[13px] text-[var(--text-secondary)]">{ocupaiPropertyName(row.property)}</div>
                       <div className="mt-1 text-xs text-[var(--text-muted)]">
                         {formatDate(row.checkIn)} – {formatDate(row.checkOut)} · {row.nights} nights
+                        {row.source ? ` · ${row.source.replace(/_/g, " ")}` : ""}
                       </div>
+                      {row.status === "PENDING" || row.status === "INQUIRY" || row.status === "EXPIRED" ? (
+                        <div className="mt-1 text-xs font-semibold text-[var(--warning,#F5A524)]">
+                          {formatApprovalCountdown(
+                            row.approvalDeadlineAt,
+                            row.approvalExpired || row.status === "EXPIRED",
+                          ) ?? t("screens.pendingApproval")}
+                        </div>
+                      ) : null}
                       <div className="mt-2 font-[family-name:var(--font-outfit)] text-lg font-bold">
                         {formatCurrency(row.totalAmount, row.currency)}
                       </div>

@@ -1,9 +1,12 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, CreditCard, Link2, Tags, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Glass, PageHeader } from "@/components/ui";
+import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import type { BookingApprovalSettings } from "@/lib/booking-approval";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 import { useTranslation } from "@/lib/i18n";
 
@@ -27,13 +30,53 @@ const LINKS = [
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const queryClient = useQueryClient();
   const { mode, setMode } = useTheme();
   const language = session?.user.preferredLanguage ?? "en";
   const currency = session?.organization.defaultCurrency ?? "GBP";
+  const approvalQuery = useQuery({
+    queryKey: ["booking-approval", session?.organization.id],
+    queryFn: () => apiRequest<BookingApprovalSettings>("/api/booking-approval", { token: session?.token }),
+    enabled: Boolean(session?.token),
+  });
+  const approvalMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      apiRequest<BookingApprovalSettings>("/api/booking-approval", {
+        method: "PATCH",
+        token: session?.token,
+        body: { enabled },
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["booking-approval", session?.organization.id], data);
+    },
+  });
+  const approvalEnabled = approvalQuery.data?.account.enabled !== false;
 
   return (
     <div>
       <PageHeader title={t("more.items.settings")} subtitle={t("more.items.settingsHint")} />
+
+      <Glass className="mb-4">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-[2.8px] text-[var(--text-muted)]">
+          {t("screens.bookingApprovalMode")}
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-medium">{t("screens.bookingApprovalModeHint")}</div>
+            <div className="mt-1 text-[13px] text-[var(--text-muted)]">
+              {t("screens.bookingApprovalModeBoundary")}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={`filter-chip ${approvalEnabled ? "on" : ""}`}
+            disabled={approvalMutation.isPending || approvalQuery.isPending}
+            onClick={() => approvalMutation.mutate(!approvalEnabled)}
+          >
+            {approvalEnabled ? t("common.on") : t("common.off")}
+          </button>
+        </div>
+      </Glass>
 
       <Glass className="mb-4">
         <div className="mb-3 text-[11px] font-medium uppercase tracking-[2.8px] text-[var(--text-muted)]">{t("appearance.label")}</div>

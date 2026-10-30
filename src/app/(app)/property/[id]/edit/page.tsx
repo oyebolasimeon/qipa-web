@@ -27,6 +27,7 @@ export default function PropertyEditPage() {
   const [bedrooms, setBedrooms] = useState("1");
   const [maxGuests, setMaxGuests] = useState("2");
   const [status, setStatus] = useState("ACTIVE");
+  const [bookingApprovalMode, setBookingApprovalMode] = useState("INHERIT");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function PropertyEditPage() {
     setBedrooms(String(query.data.bedrooms ?? 1));
     setMaxGuests(String(query.data.maxGuests ?? 2));
     setStatus(query.data.status);
+    setBookingApprovalMode(query.data.bookingApprovalMode || "INHERIT");
   }, [query.data]);
 
   const save = useMutation({
@@ -57,6 +59,7 @@ export default function PropertyEditPage() {
           bedrooms: Number(bedrooms),
           maxGuests: Number(maxGuests),
           status,
+          bookingApprovalMode,
         },
       }),
     onSuccess: async () => {
@@ -86,6 +89,16 @@ export default function PropertyEditPage() {
         options={[
           { value: "ACTIVE", label: "Active" },
           { value: "INACTIVE", label: "Inactive" },
+        ]}
+      />
+      <FormSelect
+        label="Booking Approval Mode"
+        value={bookingApprovalMode}
+        onChange={setBookingApprovalMode}
+        options={[
+          { value: "INHERIT", label: "Use account default" },
+          { value: "ALWAYS_ON", label: "Always require approval" },
+          { value: "ALWAYS_OFF", label: "Always use normal booking behaviour" },
         ]}
       />
       <Button className="w-full" loading={save.isPending} onClick={() => save.mutate()}>

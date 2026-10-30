@@ -7,6 +7,7 @@ import { SkeletonDetail } from "@/components/skeleton";
 import { Button, ErrorBanner, Glass, PageHeader, StatusPill } from "@/components/ui";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { formatApprovalCountdown } from "@/lib/booking-approval";
 import { bookingSourceColor } from "@/lib/booking-source";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ocupaiPropertyName } from "@/lib/property-name";
@@ -15,7 +16,7 @@ import type { Reservation } from "@/lib/types";
 import { useState } from "react";
 
 function isPendingRequest(status?: string) {
-  return status === "PENDING" || status === "INQUIRY";
+  return status === "PENDING" || status === "INQUIRY" || status === "EXPIRED";
 }
 
 export default function ReservationDetailPage() {
@@ -92,6 +93,21 @@ export default function ReservationDetailPage() {
         action={<StatusPill color={color}>{data?.status}</StatusPill>}
       />
       <ErrorBanner message={error} />
+      {isPendingRequest(data?.status) ? (
+        <Glass className="mb-4">
+          <div className="text-sm text-[var(--text-secondary)]">
+            {data?.status === "EXPIRED" || data?.approvalExpired
+              ? "This request expired without a decision."
+              : "Channel request awaiting Approve or Decline."}
+          </div>
+          {data?.approvalDeadlineAt ? (
+            <div className="mt-2 text-sm font-semibold text-[var(--warning,#F5A524)]">
+              {formatApprovalCountdown(data.approvalDeadlineAt, data.approvalExpired || data.status === "EXPIRED") ??
+                `Decide by ${new Date(data.approvalDeadlineAt).toLocaleString()}`}
+            </div>
+          ) : null}
+        </Glass>
+      ) : null}
       <Glass accent className="mb-4">
         <div className="font-[family-name:var(--font-outfit)] text-3xl font-bold">
           {formatCurrency(data?.totalAmount ?? 0, data?.currency)}
@@ -131,7 +147,7 @@ export default function ReservationDetailPage() {
         </div>
         {operate && !closed ? (
           <div className="mt-5 flex flex-col gap-2">
-            {isPendingRequest(data?.status) ? (
+            {isPendingRequest(data?.status) && data?.status !== "EXPIRED" && !data?.approvalExpired ? (
               <Button
                 className="w-full"
                 loading={updateStatus.isPending}
